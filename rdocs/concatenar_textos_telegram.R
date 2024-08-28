@@ -33,5 +33,5 @@ texto <- texto %>%
 #cofre = texto
 #cofre = append(cofre,texto)
 #texto = cofre
-#rm(mensagens,page,cofre)
+rm(mensagens,page,cofre)
 

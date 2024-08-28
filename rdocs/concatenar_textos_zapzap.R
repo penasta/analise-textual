@@ -1,12 +1,10 @@
 pacman::p_load(tidyverse,stringi,tm)
 
-texto <- readLines("dados/est.txt")
-texto <- sub(".*: ", "", texto)
-texto <- tm::removeWords(texto, stopwords("pt"))
-texto <- stri_trans_general(texto, "Latin-ASCII")
-
-texto <- texto %>%
-  str_to_lower() %>%
+texto <- readLines("dados/data.txt") %>%
+  sub(".*: ", "", .) %>%
+  removeWords(stopwords("pt")) %>%
+  stri_trans_general("Latin-ASCII") %>%
+  tolower() %>%
   str_replace_all("\n", " ") %>%
   str_replace_all("\"", " ") %>%
   str_replace_all("https://\\S+", " ") %>%
@@ -21,29 +19,25 @@ texto <- texto %>%
   gsub("[^\x01-\x7F]", "", .) %>%
   .[. != ""] %>%
   .[nzchar(trimws(.))] %>%
-  str_trim()
+  str_trim() %>%
+  .[!grepl(paste(c("<midia oculta>", "mensagem apagada", "seu codigo de seguranca com .* mudou toque para saber mais", "k{2,}", "a{2,}"), collapse = "|"), .)] %>%
+  gsub("\\b\\w\\b", "", .) %>%
+  .[!grepl("seu codigo de seguranca", .)] %>%
+  .[!grepl("atualizou duracao mensagens", .)] %>%
+  .[!grepl("desativou mensagens", .)] %>%
+  .[!grepl("<arquivo midia oculto>", .)] %>%
+  .[. != ""] %>%
+  removeWords(stopwords("pt")) %>%
+  gsub("\\s+", " ", .) %>%
+  trimws() %>%
+  .[nchar(.) > 2] %>%
+  .[!grepl("codigo seguranca mudou toque saber", ., ignore.case = TRUE)] %>%
+  gsub("<mensagem editada>", "", .) %>%
+  .[!grepl("entrou usando link convite deste grupo", ., ignore.case = TRUE)] %>%
+  .[!grepl("codigo seguranca", ., ignore.case = TRUE)] %>%
+  .[!grepl("entrou neste grupo atraves comunidade", ., ignore.case = TRUE)] %>%
+  .[!grepl("mudou configuracoes grupo permitir", ., ignore.case = TRUE)] %>%
+  .[!grepl("mudou configuracoes desse grupo permitir", ., ignore.case = TRUE)] %>%
+  .[!grepl("mudou configuracoes permitir", ., ignore.case = TRUE)]
 
-padroes <- c("<midia oculta>",
-             "mensagem apagada",
-             "seu codigo de seguranca com .* mudou toque para saber mais",
-             "k{2,}",
-             "a{2,}")
-texto <- texto[!grepl(paste(padroes, collapse = "|"), texto)]
-texto <- gsub("\\b\\w\\b", "", texto)
-texto <- texto[!grepl("seu codigo de seguranca", texto)]
-texto <- texto[texto != ""]
-texto <- tm::removeWords(texto, stopwords("pt"))
-texto <- gsub("\\s+", " ", texto)
-texto <- trimws(texto)
-texto <- texto[nchar(texto) > 2]
-texto <- texto[!grepl("codigo seguranca mudou toque saber", texto, ignore.case = TRUE)]
-texto <- gsub("<mensagem editada>", "", texto)
-texto <- texto[!grepl("entrou usando link convite deste grupo", texto, ignore.case = TRUE)]
-texto <- texto[!grepl("codigo seguranca", texto, ignore.case = TRUE)]
-texto <- texto[!grepl("entrou neste grupo atraves comunidade", texto, ignore.case = TRUE)]
-texto <- texto[!grepl("mudou configuracoes grupo permitir", texto, ignore.case = TRUE)]
-texto <- texto[!grepl("mudou configuracoes desse grupo permitir", texto, ignore.case = TRUE)]
-texto <- texto[!grepl("mudou configuracoes permitir", texto, ignore.case = TRUE)]
-
-texto
-rm(padroes)
+#texto

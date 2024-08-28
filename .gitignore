@@ -48,3 +48,5 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 template.Rproj
+TCC_DB.db
+rdocs/testes_tcc.R

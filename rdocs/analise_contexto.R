@@ -1,7 +1,7 @@
 pacman::p_load(quanteda)
 
 # termos a serem buscados
-termos.vetor= c("configuracoes"
+termos.vetor= c("democracia"
                 )
 
 texto %>% 

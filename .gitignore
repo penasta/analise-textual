@@ -50,3 +50,4 @@ rsconnect/
 template.Rproj
 TCC_DB.db
 rdocs/testes_tcc.R
+rdocs/source/filtro_palavras.R

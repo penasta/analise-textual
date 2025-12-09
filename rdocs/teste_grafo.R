@@ -134,7 +134,7 @@ entities <- spacy_extract_entity(data)
 # Filtrar apenas entidades cujo tipo são pessoas ou organizações:
 filtered_entities <- entities %>%
   filter(ent_type=='ORG'| ent_type=='PER')
-#filtered_entities = entities
+# filtered_entities = entities
 
 edges <- filtered_entities %>%
   group_by(doc_id) %>%
@@ -213,7 +213,7 @@ vert <- subt %>%
 tidy_graph_components <- subt  %>%
   select(item1, item2) %>% 
   as.matrix() %>%
-  graph.edgelist(directed = FALSE)  %>%
+  graph_from_edgelist(directed = FALSE)  %>%
   as_tbl_graph() %>% 
   activate("edges") %>% 
   # definir pesos como numero de ocorrencias
@@ -234,7 +234,7 @@ subt %>%
   graph_from_data_frame(vertices = vert) %>%
   ggraph(layout = "fr") +
   geom_edge_link(aes(edge_alpha = log(n), edge_width = log(n)), show.legend = FALSE,
-                 arrow = a, end_cap = circle(.07, 'inches'), color = "yellow") +
+                 arrow = a, end_cap = circle(.07, 'inches'), color = "lightblue") +
   geom_node_point() + 
   geom_node_text(aes(label = name, size = n, alpha = n, color = component),# color = "#EAFF00",
                  repel = TRUE, point.padding = unit(0.2, "lines"),
@@ -246,4 +246,4 @@ subt %>%
     panel.background = element_rect(fill = "#2D2D2D"),
     legend.key = element_rect(fill = "#2D2D2D")
   ) +
-  theme_graph(background = "black")
+  theme_graph(background = "grey")

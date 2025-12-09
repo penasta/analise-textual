@@ -1,14 +1,15 @@
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(xml2,rvest,tidyverse,wordcloud,RColorBrewer,wordcloud2,tm)
+pacman::p_load(xml2,rvest,tidyverse,wordcloud,RColorBrewer,wordcloud2,tm,stringi)
 
-link_site <- "C:\\Users\\toled\\Documents\\R_testes\\dados2\\messages.html"
+link_site <- "dados/messages.html"
 page <- read_html(link_site)
 
 mensagens <- page %>% 
   html_nodes("div.text") %>%
   html_text()
 
-mensagens = mensagens %>% str_to_lower(.) %>%
+mensagens = mensagens %>%
+  str_to_lower(.) %>%
   str_replace_all(., "\n", " ") %>%
   str_replace_all(., "\"", " ") %>%
   str_replace_all(., "https://\\S+", " ") %>%
@@ -23,6 +24,20 @@ mensagens <- mensagens[mensagens != "  "]
 mensagens <- mensagens[!str_detect(mensagens, "saved by @download_it_bot")]
 mensagens <- mensagens[-1]
 mensagens
+
+mensagens <- stri_trans_general(mensagens, "Latin-ASCII")
+
+mensagens <- mensagens %>%
+  str_replace_all("\\*", " ") %>%
+  str_replace_all("[[:punct:]]", " ") %>%
+  str_replace_all("\\b[0-9]+\\b", " ") %>%
+  str_replace_all("\\s+", " ") %>%
+  str_replace_all("\\+", " ") %>%
+  gsub("[^\x01-\x7F]", "", .) %>%
+  .[. != ""] %>%
+  .[nzchar(trimws(.))] %>%
+  str_trim()
+
 
 df = as_tibble(mensagens)
 colnames(df) <- 'mensagem'
@@ -57,6 +72,9 @@ matrix <- as.matrix(dtm)
 words <- sort(rowSums(matrix),decreasing=TRUE) 
 df <- data.frame(word = names(words),freq=words)
 
+rm(df2,docs,dtm,lista,matrix,i,vetor,words)
+gc()
+
 filtro <- c('que','para','com','isso','tem','por','uma','pra','esse','mais',
             'dos','das','essa','tá','nas','nem','sem','aos','sobre','aí','pois',
             'este','esse','dos','ela','pra', 'está', 'mas',"vamos","vai",
@@ -72,12 +90,14 @@ filtro <- c('que','para','com','isso','tem','por','uma','pra','esse','mais',
             "também","tbm","tambem","atraves","através","única","unica","costa",
             "consegue","as","às","ás","vem","vêm","null","não","ele","la","lá",
             "sim","boa","estamos","agora","hoje","dia","muito","quem","até",
-            "pode","bom","nome","quando","coisa",
-            'data','change','exporting','settings','included','download×','ephotonot','download',"pinned","may","photonot","“a","“não","february",
-            "photonot","“a","“não") # adicionar mais conforme necessidade
-
-rm(df2,docs,dtm,lista,matrix,i,vetor,words)
-gc()
+            "pode","bom","nome","quando","coisa","estao","sou","paulo","qual",
+            'data','change','exporting','settings','included','download×',
+            'ephotonot','download',"pinned","may","photonot","“a","“não","february",
+            "photonot","“a","“não","est","noite","rio","nao","todos","minas",
+            "gerais","jefersonbernardo","bla","etc","janeiro","toda","todo",
+            "cada","todas","suas","neste","seus","alguns","voce","existe","vao",
+            "colocar","enquanto","quanto","deste","ate","serao","quero","onde",
+            "feito") # adicionar mais conforme necessidade
 
 df <- df %>% filter(!(word %in% filtro)) %>% # Aplicando filtros
   filter(freq >5)

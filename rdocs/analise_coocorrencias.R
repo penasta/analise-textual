@@ -5,15 +5,18 @@ pacman::p_load(udpipe,xml2,rvest,tidyverse,wordcloud,RColorBrewer,wordcloud2,
 `%notin%` = negate(`%in%`)
 
 # Dados ----
-source("rdocs/concatenar_textos_zapzap.R")
+
 
 # Modelo ----
-#dl <- udpipe_download_model(language = "portuguese-bosque")
+# dl <- udpipe_download_model(language = "portuguese-br",
+#                             udpipe_model_repo = "jwijffels/udpipe.models.ud.2.0")
 
-udmodel_ptBosque <- udpipe_load_model(file = "portuguese-bosque-ud-2.5-191206.udpipe")
+udmodel<- udpipe_load_model(file = "portuguese-br-ud-2.0-170801.udpipe")
 
+texto = df$mensagem
+# rm(df)
 # Modelando ----
-txt.anotado <- udpipe::udpipe_annotate(udmodel_ptBosque, x = texto) %>%
+txt.anotado <- udpipe::udpipe_annotate(udmodel, x = texto) %>%
   as.data.frame()
 
 # Filtrando classes verbais insignificantes ----
@@ -31,34 +34,18 @@ txt.anotado = txt.anotado %>%
                         'ADP'
   ))
 
-
-# Filtrando termos insignificantes ----
-txt.anotado = txt.anotado %>%
-  filter(token %notin% c("silva","souza","gilson","roberto","joao","lucia","reginaldo",
-                         "paulo","fernando","maria","vanessa","valter","tiago","thomaz",
-                         "robson","pablo","josiel","josequias","jones","jonathas","hellen",
-                         "helio","edu","edilson","drezao","davi","augusto","anderson",
-                         "andre","jose","italo","sergio","rezende","mauro","aria","wande",
-                         "gilvan","henrique","andrade","gabriel","marcos","irineu",
-                         "elson","zack","null","faria","braziel","neto","campos","co",
-                         "nosco","bla","to","pereira","cesar","vilmanevespereira",
-                         "sonia","raimundo","billy","marbit","vrsnts","camp","buzaglo",
-                         "yuki","sarmento","holanda","cruzeiro","ncampos","master",
-                         "rino","stuart","fabio","fvp","cmack","rsrs","jefersonbernardo",
-                         "na","um","isso","se","so","me","att","no","ela","tem",
-                         "o","dos","os","ja","vao","da","do","foi","ele","dele",
-                         "mim","comigo","ate","que","deles","ao","sim","nao","ser",
-                         "la","nao","aos","sao","onde","das","ter","se","consigo",
-                         "hoje","estava","vou","entrar","tenho","avisem","feito",
-                         "mega","esta","estao","eu","sul","catarina","amazonas","bahia",
-                         "minas","gerais","rio","janeiro","rj","parte","deste","feiras",
-                         "feira","vai","atraves")
-  )
+filtro = "" # Ajustar
 
 # Definindo nº de skipgram e ocorrências desejadas ----
-coocor <- udpipe::cooccurrence(txt.anotado$token, skipgram = 5) # Ajuste de parâmetros: token ou lemma | 0 - 5 skipgram
+coocor <- udpipe::cooccurrence(txt.anotado$token, skipgram = 4,
+                               relevant = txt.anotado$token %notin% filtro) # Ajuste de parâmetros: token ou lemma | 0 - 5 skipgram
 
-coocor_filtrado <- coocor[coocor$cooc >= 8, ] # Ajustar o filtro conforme necessidade
+library(data.table)
+coocor <- as.data.table(txt.anotado)
+coocor <- coocor[, cooccurrence(token, skipgram = 4, order = FALSE), by = list(doc_id)]
+head(coocor)
+
+coocor_filtrado <- coocor[coocor$cooc >= 6, ] # Ajustar o filtro conforme necessidade
 
 # Criando tabela auxiliar para parâmetros do gráfico ----
 freq = txt.anotado %>%
@@ -82,7 +69,6 @@ image = ggraph(wordnetwork, layout = "fr") +
 image
 ggsave(file="grafo_estatico.png", plot=image, width=12, height=8,units="cm")
 
-
 image = ggraph(wordnetwork, layout = "fr") +
   geom_edge_link(aes(width = cooc, edge_alpha = cooc), edge_colour = "lightblue") +
   geom_node_text(aes(label = name, size = size), col = "#006633") +
@@ -93,16 +79,29 @@ ggsave(file="grafo_estatico.png", plot=image, width=12, height=8,units="cm")
 
 ############################# Gráfico dinâmico ################################
 
-nodes <- data.frame(id = V(wordnetwork)$name, label = V(wordnetwork)$name, size = V(wordnetwork)$size)
+nodes <- data.frame(id = V(wordnetwork)$name,
+                    label = V(wordnetwork)$name,
+                    size = V(wordnetwork)$size)
+
 edges <- data.frame(from = as.character(ends(wordnetwork, E(wordnetwork))[,1]), 
                     to = as.character(ends(wordnetwork, E(wordnetwork))[,2]), 
                     width = sqrt(E(wordnetwork)$cooc))
 
-network <- visNetwork(nodes, edges, width = "100%", height = "100vh") %>%
-  visEdges(color = list(color = "lightblue", highlight = "lightblue")) %>%
-  visNodes(color = list(background = "#006633", border = "#006633", highlight = "#006633")) %>%
+network <- visNetwork(nodes,
+                      edges,
+                      width = "100%",
+                      height = "100vh") %>%
+  visEdges(color = list(color = "lightblue",
+                        highlight = "lightblue")) %>%
+  visNodes(color = list(background = "#006633",
+                        border = "#006633",
+                        highlight = "#006633")) %>%
   visOptions(highlightNearest = TRUE,
-             nodesIdSelection = TRUE)
-
+             nodesIdSelection = TRUE) %>%
+  visInteraction(multiselect = T,
+                 selectable = T,
+                 selectConnectedEdges = T) %>%
+  visPhysics(solver = "repulsion",
+             stabilization = T)
 network
 #saveNetwork(network, file = "grafo_interativo.html")

@@ -53,11 +53,12 @@ filtro <- c('que','para','com','isso','tem','por','uma','pra','esse','mais',
             "sim","boa","estamos","agora","hoje","dia","muito","quem","até",
             "pode","bom","nome","quando","coisa") # adicionar mais conforme necessidade
 
-rm(df2,docs,dtm,lista,matrix,filtro,i,vetor,words)
+rm(df2,docs,dtm,lista,matrix,i,vetor,words)
 gc()
 
-df <- df %>% filter(!(word %in% filtro)) %>% # Aplicando filtros
-  filter(freq >9)
+df <- df %>% filter(!(word %in% filtro))
+
+df <- df %>% filter(freq >9)
 
 
 wordcloud(words = df$word, freq = df$freq, min.freq = 2,
